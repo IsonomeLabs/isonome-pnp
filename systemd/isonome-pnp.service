@@ -1,0 +1,13 @@
+[Unit]
+Description=Isonome PnP hardware watcher
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/isonome pnp start
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target
