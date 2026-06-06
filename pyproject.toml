@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "isonome-pnp"
+version = "0.1.0"
+description = "Plug-and-play hardware abstraction layer for Isonome robotics"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.8"
+authors = [
+    {name = "Isonome Robotics"},
+]
+keywords = ["robotics", "hardware", "i2c", "usb", "plug-and-play"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Hardware",
+]
+dependencies = [
+    "smbus2>=0.4",
+    "pyudev>=0.24",
+    "click>=8.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+]
+
+[project.scripts]
+isonome = "isonome_pnp.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/isonome/isonome-pnp"
+Issues = "https://github.com/isonome/isonome-pnp/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["isonome_pnp*"]
+
+[tool.setuptools.package-data]
+isonome_pnp = ["../systemd/isonome-pnp.service"]
