@@ -24,14 +24,19 @@ def _active_dir() -> Path:
     return _isonome_dir() / "active"
 
 
+def _sanitize_device_id(device_id: str) -> str:
+    """Strip path separators so a device_id cannot escape the registry dir."""
+    return device_id.replace("/", "_").replace("\\", "_")
+
+
 def _device_path(device_id: str) -> Path:
     """Return the registry path for a device_id (filename stem)."""
-    return _registry_dir() / f"{device_id}.json"
+    return _registry_dir() / f"{_sanitize_device_id(device_id)}.json"
 
 
 def _active_link(device_id: str) -> Path:
     """Return the active symlink path for a device_id."""
-    return _active_dir() / f"{device_id}.json"
+    return _active_dir() / f"{_sanitize_device_id(device_id)}.json"
 
 
 def ensure_dirs() -> None:
@@ -92,7 +97,9 @@ def activate_device(device_id: str) -> None:
     ensure_dirs()
     src = _device_path(device_id)
     dst = _active_link(device_id)
-    if src.exists() and not dst.exists():
+    if src.exists():
+        if dst.exists() or dst.is_symlink():
+            dst.unlink()
         dst.symlink_to(os.path.relpath(src, dst.parent))
 
 
@@ -105,6 +112,8 @@ def deactivate_device(device_id: str) -> None:
 
 def save_calibration(device_id: str, data: Dict[str, Any]) -> None:
     """Merge calibration data into an existing registry entry, or create one."""
+    if not isinstance(data, dict):
+        raise TypeError("Calibration data must be a dict")
     existing = get_device(device_id) or {}
     existing.update(data)
     existing["status"] = "calibrated"
