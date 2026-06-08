@@ -192,6 +192,9 @@ def calibrate(device_id, json_data):
         except json.JSONDecodeError as exc:
             click.echo(f"Invalid JSON: {exc}", err=True)
             sys.exit(1)
+        if not isinstance(data, dict):
+            click.echo("Calibration data must be a JSON object", err=True)
+            sys.exit(1)
     else:
         # Interactive fallback
         click.echo(f"Enter calibration key=value pairs for {device_id}. Empty line to finish.")

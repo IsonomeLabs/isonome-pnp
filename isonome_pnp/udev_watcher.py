@@ -44,7 +44,7 @@ def _serial_from_device(device) -> Optional[str]:
 
 def _device_id_for(prefix: str, serial: str, taken: set) -> str:
     """Generate a unique device ID for a USB/CSI device."""
-    base = f"{prefix}_{serial}"
+    base = f"{prefix}_{serial}".replace("/", "_").replace("\\", "_")
     if base not in taken:
         return base
     n = 1
