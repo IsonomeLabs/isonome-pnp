@@ -101,18 +101,18 @@ def _tick(bus_number: int, prev: Set[int]) -> Set[int]:
         # Find the device_id(s) that map to this address and deactivate them.
         # In the common case there is exactly one.
         active_dir = os.path.expanduser("~/.isonome/active")
-        registry_dir = os.path.expanduser("~/.isonome/registry")
         try:
             entries = os.listdir(active_dir)
         except FileNotFoundError:
             entries = []
         for entry in entries:
-            path = os.path.join(registry_dir, entry)
+            path = os.path.join(active_dir, entry)
             if not os.path.isfile(path):
                 continue
             try:
-                data = json.load(open(path))
-                if data.get("addr", "").upper() == f"0x{addr:02X}":
+                with open(path) as f:
+                    data = json.load(f)
+                if data.get("addr", "") == f"0x{addr:02X}":
                     deactivate_device(Path(entry).stem)
                     print(f"unplugged 0x{addr:02X}", flush=True)
                     logger.info("unplugged 0x%02X (%s)", addr, entry)
