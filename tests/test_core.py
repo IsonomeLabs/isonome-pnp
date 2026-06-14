@@ -48,6 +48,38 @@ class TestListActive:
         (fake_home / ".isonome" / "active" / "subdir").mkdir()
         assert core.list_active() == []
 
+    def test_caches_until_directory_changes(self, fake_home):
+        core.ensure_dirs()
+        reg = fake_home / ".isonome" / "registry" / "dev.json"
+        reg.write_text(json.dumps({"status": "ok"}))
+        lnk = fake_home / ".isonome" / "active" / "dev.json"
+        lnk.symlink_to(os.path.relpath(reg, lnk.parent))
+
+        first = core.list_active()
+        # Mutate the registry file but not the active directory structure.
+        reg.write_text(json.dumps({"status": "changed"}))
+        cached = core.list_active()
+        # Should return the cached parsed data.
+        assert cached == first
+
+        # Changing the active directory invalidates the cache.
+        lnk2 = fake_home / ".isonome" / "active" / "other.json"
+        lnk2.symlink_to(os.path.relpath(reg, lnk2.parent))
+        invalidated = core.list_active()
+        assert len(invalidated) == 2
+
+    def test_save_device_invalidates_list_active_cache(self, fake_home):
+        core.ensure_dirs()
+        reg = fake_home / ".isonome" / "registry" / "dev.json"
+        reg.write_text(json.dumps({"status": "ok"}))
+        lnk = fake_home / ".isonome" / "active" / "dev.json"
+        lnk.symlink_to(os.path.relpath(reg, lnk.parent))
+
+        core.list_active()
+        core.save_device("dev", {"status": "updated"})
+        result = core.list_active()
+        assert result[0]["status"] == "updated"
+
 
 class TestGetDevice:
     def test_missing(self, fake_home):
@@ -72,6 +104,22 @@ class TestSaveDevice:
         core.save_device("dev", {"x": 2})
         path = fake_home / ".isonome" / "registry" / "dev.json"
         assert json.loads(path.read_text()) == {"x": 2}
+
+    def test_noop_when_content_unchanged(self, fake_home):
+        core.save_device("dev", {"a": 1, "b": 2})
+        path = fake_home / ".isonome" / "registry" / "dev.json"
+        mtime_before = path.stat().st_mtime_ns
+        # Different key order, same data -> no disk write
+        result = core.save_device("dev", {"b": 2, "a": 1})
+        assert result is False
+        assert path.stat().st_mtime_ns == mtime_before
+
+    def test_rewrites_when_content_changes(self, fake_home):
+        core.save_device("dev", {"a": 1})
+        result = core.save_device("dev", {"a": 2})
+        assert result is True
+        path = fake_home / ".isonome" / "registry" / "dev.json"
+        assert json.loads(path.read_text()) == {"a": 2}
 
     def test_rejects_path_traversal(self, fake_home):
         """device_id containing '..' should not escape the registry dir."""
